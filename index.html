@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ISH Engineering - Bill Generator</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -203,69 +203,129 @@
 
 
   /* ── MOBILE / TABLET RESPONSIVE ── */
-  @media (max-width: 860px) {
-    .preview-wrapper { overflow-x: auto; }
-    .a4-page { transform-origin: top left; }
+
+  /* Tablet: 601px – 860px */
+  @media (max-width: 860px) and (min-width: 601px) {
+    body { padding: 20px 16px; }
+    .control-panel { padding: 22px 20px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group.half { grid-column: 1 / -1; }
+
+    .item-col-labels { display: none; }
+    .item-card-header {
+      grid-template-columns: 1fr 1fr 32px;
+      grid-template-rows: auto auto;
+      gap: 8px;
+    }
+    .item-card-header input:nth-child(1) { grid-column: 1 / 3; }
+    .item-card-header input:nth-child(2) { grid-column: 1; }
+    .item-card-header input:nth-child(3) { grid-column: 2; }
+    .item-card-header input:nth-child(4) { grid-column: 1; }
+    .item-card-header .btn-remove { grid-column: 3; grid-row: 1; align-self: start; }
+
+    .due-col-labels { display: none; }
+    .due-row-item {
+      grid-template-columns: 1fr 1fr 32px;
+      grid-template-rows: auto auto;
+      gap: 8px;
+    }
+    .due-row-item input:nth-child(1) { grid-column: 1; }
+    .due-row-item input:nth-child(2) { grid-column: 2; }
+    .due-row-item input:nth-child(3) { grid-column: 1 / 3; }
+    .due-row-item .btn-remove { grid-column: 3; grid-row: 1; align-self: start; }
+
+    .preview-wrapper { overflow-x: hidden; }
+    #billPreview { width: 794px; transform-origin: top left; }
   }
 
-  @media (max-width: 700px) {
-    body { padding: 12px 10px; }
+  /* Mobile: up to 600px */
+  @media (max-width: 600px) {
+    body { padding: 10px 8px; }
 
-    .control-panel { padding: 18px 14px; border-radius: 12px; }
-    .control-panel h2 { font-size: 11px; margin-bottom: 14px; }
+    .control-panel { padding: 16px 12px; border-radius: 12px; }
+    .control-panel h2 { font-size: 11px; margin-bottom: 14px; letter-spacing: 1.2px; }
 
-    /* Form grid: 1 column on mobile */
     .form-grid { grid-template-columns: 1fr; gap: 10px; }
     .form-group.half { grid-column: span 1; }
     .form-group.full { grid-column: span 1; }
 
-    input, textarea, select { font-size: 14px; padding: 11px 12px; }
+    /* Bill No + serial row */
+    .bill-no-row { display: flex; gap: 6px; align-items: center; }
 
-    /* Item card: stack columns */
+    input, textarea, select {
+      font-size: 16px; /* prevent iOS zoom */
+      padding: 12px 12px;
+    }
+
+    .section-label { font-size: 10px; margin: 16px 0 8px; }
+
+    /* Item card: stacked layout */
     .item-col-labels { display: none; }
-    .item-card { padding: 12px; }
+    .item-card { padding: 12px 10px; }
     .item-card-header {
+      display: grid;
       grid-template-columns: 1fr 32px;
-      grid-template-rows: auto auto auto;
+      grid-template-rows: auto auto auto auto;
       gap: 6px;
     }
-    .item-card-header input:nth-child(1) { grid-column: 1 / 2; }
-    .item-card-header input:nth-child(2),
-    .item-card-header input:nth-child(3),
-    .item-card-header input:nth-child(4) { grid-column: 1 / 2; }
-    .item-card-header .btn-remove { grid-column: 2; grid-row: 1; }
+    .item-card-header input:nth-child(1) { grid-column: 1 / 2; grid-row: 1; }
+    .item-card-header input:nth-child(2) { grid-column: 1 / 2; grid-row: 2; }
+    .item-card-header input:nth-child(3) { grid-column: 1 / 2; grid-row: 3; }
+    .item-card-header input:nth-child(4) { grid-column: 1 / 2; grid-row: 4; }
+    .item-card-header .btn-remove { grid-column: 2; grid-row: 1; align-self: center; }
 
-    /* Due panel */
+    /* Add placeholder labels for stacked inputs */
+    .item-card-header input:nth-child(1)::placeholder { content: 'Description'; }
+
+    .sub-item-row input { font-size: 14px; }
+
+    /* Due panel stacked */
+    .due-panel-header { padding: 12px 14px; }
+    .due-panel-title { font-size: 11px; letter-spacing: 1px; }
     .due-col-labels { display: none; }
+    .due-body { padding: 12px 14px; }
     .due-row-item {
+      display: grid;
       grid-template-columns: 1fr 32px;
       grid-template-rows: auto auto auto;
       gap: 6px;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed var(--border);
     }
     .due-row-item input { grid-column: 1 / 2; }
-    .due-row-item .btn-remove { grid-column: 2; grid-row: 1; }
+    .due-row-item .btn-remove { grid-column: 2; grid-row: 1; align-self: center; }
 
-    /* Buttons */
-    .btn-print { padding: 12px 18px; font-size: 13px; }
+    /* Buttons row */
+    .btn-print { padding: 13px 18px; font-size: 13px; width: 100%; justify-content: center; }
+    .btns-row { display: flex; flex-direction: column; gap: 10px; }
 
     /* Preview: scale down A4 to fit screen */
-    .preview-wrapper { overflow-x: hidden; }
-    .a4-page {
-      width: 100% !important;
-      min-height: unset !important;
-      border-radius: 8px;
+    .preview-wrapper {
+      overflow: hidden;
+      width: 100%;
+    }
+    #billPreview {
+      width: 794px !important;
       transform-origin: top left;
     }
+    .preview-label { font-size: 10px; }
+  }
 
-    #billPreview { width: 794px; }
-    .preview-wrapper { overflow: hidden; }
+  /* Extra small: up to 380px */
+  @media (max-width: 380px) {
+    body { padding: 8px 6px; }
+    .control-panel { padding: 12px 10px; }
+    .due-toggle-btn { padding: 5px 10px; font-size: 10px; }
   }
 
   @media print {
     body { background: white; padding: 0; }
     .control-panel, .preview-label { display: none !important; }
     .preview-wrapper { max-width: none; }
-    .a4-page { box-shadow: none; width: 210mm; min-height: 297mm; border-radius: 0; margin: 0; }
+    .a4-page { box-shadow: none; width: 210mm; min-height: 297mm; border-radius: 0; margin: 0;
+      transform: none !important; }
   }
 </style>
 </head>
@@ -350,12 +410,12 @@
     </div>
   </div>
 
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;">
-      <button class="btn btn-print" id="btnSavePDF" onclick="savePDF()">📄 Save as PDF</button>
-      <button class="btn btn-print" style="background:#2d6a4f;" onclick="window.print()">🖨️ Print</button>
+  <div class="btns-row" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-top:20px;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;width:100%;">
+      <button class="btn btn-print" id="btnSavePDF" onclick="savePDF()" style="flex:1;justify-content:center;">📄 Save as PDF</button>
+      <button class="btn btn-print" style="background:#2d6a4f;flex:1;justify-content:center;" onclick="window.print()">🖨️ Print</button>
     </div>
-    <div style="font-size:12px;color:var(--muted);margin-top:20px;">A4 size • Background সহ PDF Save হবে</div>
+    <div style="font-size:11px;color:var(--muted);width:100%;text-align:center;">A4 size • Background সহ PDF Save হবে</div>
   </div>
 </div>
 
@@ -422,7 +482,7 @@
 
       <div class="sig-row">
         <div class="sig-box">
-          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAjCAYAAAB2BvMkAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAvFSURBVHhe7ZwHkBRFF8eHIBYFWORQkg+KoIAEjxwkSAZBBIlHEhGQnJOSQckUuUAKUFIRJAfJSREQVKLkHJUcFOxvf49uv7m9nQ3HnXLc/qq22O6Z2Z3uef3e/75eLo5yYQUJEsXE1f8GCRKlRLnHWrp0qbVo0SLrzz//tGrUqGE1adJEHwkSm4gSj7V9+3arYsWKVpw4cawOHTpY9+/fty5evGiFhYVZmzZt0mfFHu7evWtNnjzZCg0NlTmxv9q3b6/PesnBY0WWmzdvqgIFCuDxVLly5dSxY8f0kWeUKVNGuSZSt15+Ll26pBo2bKhcBiRzUrduXbV371516tQp5Vpoqnfv3tJ/4sQJfYV3XF5fuRapbsUsIm1YrhUpk/TGG2+oo0eP6t7wVKtWTQ0fPly3Xm5YQMxHnjx51MKFC3VveB4/fqySJUumtm7dqnucwajeeust+UyMM6YRKcOqXLmyDHjo0KG6JyL37t1TSZIkURcuXNA9Lyfjx4+XuciRI4e6c+eO7vXMzz//rFKkSKH++OMP3ePMm2++KZ9bsGBB5QqtujfmEJBhPXnyRFWoUEEGvGzZMt3rmcWLF6vXX39dt7zz119/qatXr+pWzAAjItQzF4zVHwYNHqRCC4fqljMDBw6Uzy1evLjuiXkEZFiFChWSAbvEuu5xhpU2YsQI3XLm1q1bKnny5PK5x48f174vNteuXZP7TZMmTUDeJG3atGrSpEm65RnCHp9dpEgR9ffff+vemIffhlWzZk0Z8Ndff617nPnxxx9VypQpJRz6ApeP6Ef0HjhwQPf6pnHjxmrRokW69e/x008/yTxwv4Fw5MgRuQ6jdOLhw4ciHwiXMR2/DOuLL76QSfnss890j3dKlSql+vTpo1vOfPnll2ru3LkSCt9++23d65tdu3ZJGPq3OXz4sIofP76qU6eO7vGfBg0aMdcnU6WQAAAAAElFTkSuQmCC" style="max-width:120px;height:auto;">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAjCAYAAAB2BvMkAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAvFSURBVHhe7ZwHkBRFF8eHIBYFWORQkg+KoIAEjxwkSAZBBIlHEhGQnJOSQckUuUAKUFIRJAfJSREQVKLkHJUcFOxvf49uv7m9nQ3HnXLc/qq22O6Z2Z3uef3e/75eLo5yYQUJEsXE1f8GCRKlRLnHWrp0qbVo0SLrzz//tGrUqGE1adJEHwkSm4gSj7V9+3arYsWKVpw4cawOHTpY9+/fty5evGiFhYVZmzZt0mfFHu7evWtNnjzZCg0NlTmxv9q3b6/PesnBY0WWmzdvqgIFCuDxVLly5dSxY8f0kWeUKVNGuSZSt15+Ll26pBo2bKhcBiRzUrduXbV371516tQp5Vpoqnfv3tJ/4sQJfYV3XF5fuRapbsUsIm1YrhUpk/TGG2+oo0eP6t7wVKtWTQ0fPly3Xm5YQMxHnjx51MKFC3VveB4/fqySJUumtm7dqnucwajeeust+UyMM6YRKcOqXLmyDHjo0KG6JyL37t1TSZIkURcuXNA9Lyfjx4+XuciRI4e6c+eO7vXMzz//rFKkSKH++OMP3ePMm2++KZ9bsGBB5QqtujfmEJBhPXnyRFWoUEEGvGzZMt3rmcWLF6vXX39dt7zz119/qatXr+pWzAAjItQzF4zVHwYNHqRCC4fqljMDBw6Uzy1evLjuiXkEZFiFChWSAbvEuu5xhpU2YsQI3XLm1q1bKnny5PK5x49f274vNteuXZP7TZMmTUDeJG3atGrSpEm65RnCHp9dpEgR9ffff+vemIffhlWzZk0Z8Ndff617nPnxxx9VypQpJRz6ApeP6Ef0HjhwQPf6pnHjxmrRokW69e/x008/yTxwv4Fw5MgRuQ6jdOLhw4ciHwiXMR2/DOuLL76QSfnss890j3dKlSql+vTpo1vOfPnll2ru3LkSCt9++23d65tdu3ZJGPq3OXz4sIofP76qU6eO7vGfBg0aMdcnU6WQAAAAAElFTkSuQmCC" style="max-width:120px;height:auto;">
           <div class="sig-line"></div>
           <div class="sig-label">Authorized Signature</div>
         </div>
@@ -524,12 +584,12 @@
         <div class="item-card-header">
           <input type="text" value="${escH(item.desc)}" placeholder="Item description..."
             oninput="items[${i}].desc=this.value;updatePreview()">
-          <input type="number" value="${item.qty}" min="1" style="text-align:center"
+          <input type="number" value="${item.qty}" min="1" placeholder="Qty" style="text-align:center"
             oninput="items[${i}].qty=+this.value;updatePreview();refreshTotal(${i})">
-          <input type="number" value="${item.unit}" min="0" style="text-align:right"
+          <input type="number" value="${item.unit}" min="0" placeholder="Unit Price" style="text-align:right"
             oninput="items[${i}].unit=+this.value;updatePreview();refreshTotal(${i})">
           <input type="text" id="ti_${i}" value="${lt.toLocaleString('en-IN',{minimumFractionDigits:2})}"
-            readonly style="text-align:right;background:#eef1f7;cursor:not-allowed;font-family:'IBM Plex Mono',monospace;font-size:11px">
+            readonly placeholder="Total" style="text-align:right;background:#eef1f7;cursor:not-allowed;font-family:'IBM Plex Mono',monospace;font-size:11px">
           <button class="btn-remove" onclick="removeItem(${i})">×</button>
         </div>
         <div class="sub-items-section">
@@ -652,13 +712,11 @@
     const grandTotal = subTotal + dueTotal;
 
     if(validDues.length > 0){
-      // Sub total row
       const str = document.createElement('tr');
       str.className = 'subtotal-row';
       str.innerHTML = `<td colspan="4" style="text-align:right;padding:10px 14px;letter-spacing:0.5px;">Sub Total :</td><td style="text-align:right;padding:10px 14px;">${subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
       tfoot.appendChild(str);
 
-      // Due rows
       validDues.forEach(d=>{
         const dr = document.createElement('tr');
         dr.className = 'due-trow';
@@ -673,13 +731,11 @@
         tfoot.appendChild(dr);
       });
 
-      // Grand Total row
       const gtr = document.createElement('tr');
       gtr.className = 'grand-total-row';
       gtr.innerHTML = `<td colspan="4" style="text-align:right;padding:13px 14px;letter-spacing:1px;">GRAND TOTAL :</td><td style="text-align:right;padding:13px 14px;">${grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
       tfoot.appendChild(gtr);
     } else {
-      // Plain total row
       const tr = document.createElement('tr');
       tr.className = 'total-row';
       tr.innerHTML = `<td colspan="4" style="text-align:right;padding:12px 14px;letter-spacing:0.5px;">Total :</td><td style="text-align:right;padding:12px 14px;">${subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
@@ -722,17 +778,34 @@
     overlay.classList.add('show');
     try {
       const billEl = document.getElementById('billPreview');
-      const origMin = billEl.style.minHeight;
+
+      // Temporarily reset any scaling transform for accurate capture
+      const origTransform = billEl.style.transform;
+      const origTransformOrigin = billEl.style.transformOrigin;
+      const origMarginBottom = billEl.style.marginBottom;
+      const origMinHeight = billEl.style.minHeight;
+
+      billEl.style.transform = '';
+      billEl.style.transformOrigin = '';
+      billEl.style.marginBottom = '';
       billEl.style.minHeight = '1123px';
+      billEl.style.width = '794px';
+
       await new Promise(r=>setTimeout(r,350));
 
       const canvas = await html2canvas(billEl,{
         scale:2, useCORS:true, allowTaint:true,
         backgroundColor:'#ffffff', logging:false,
-        width:billEl.offsetWidth, height:billEl.offsetHeight,
-        windowWidth:billEl.scrollWidth, windowHeight:billEl.scrollHeight
+        width:794, height:billEl.scrollHeight,
+        windowWidth:794, windowHeight:billEl.scrollHeight
       });
-      billEl.style.minHeight = origMin;
+
+      // Restore styles
+      billEl.style.transform = origTransform;
+      billEl.style.transformOrigin = origTransformOrigin;
+      billEl.style.marginBottom = origMarginBottom;
+      billEl.style.minHeight = origMinHeight;
+      scaleBillPreview();
 
       const {jsPDF} = window.jspdf;
       const A4W=210, A4H=297;
@@ -761,7 +834,6 @@
     }
   }
 
-
   /* ── Bill Preview Scale (Mobile) ── */
   function scaleBillPreview() {
     const preview = document.getElementById('billPreview');
@@ -773,10 +845,13 @@
       const scale = wrapperW / billW;
       preview.style.transform = 'scale(' + scale + ')';
       preview.style.transformOrigin = 'top left';
-      preview.style.marginBottom = ((preview.scrollHeight * scale) - preview.scrollHeight) + 'px';
+      // Adjust wrapper height so it doesn't leave a gap
+      const scaledHeight = preview.scrollHeight * scale;
+      wrapper.style.height = scaledHeight + 'px';
     } else {
       preview.style.transform = '';
-      preview.style.marginBottom = '';
+      preview.style.transformOrigin = '';
+      wrapper.style.height = '';
     }
   }
 
@@ -785,7 +860,6 @@
 
   /* ─────────────── Init ─────────────── */
   function init(){
-    scaleBillPreview();
     const today=new Date();
     const ds=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
     document.getElementById('billDate').value=ds;
@@ -793,6 +867,7 @@
     document.getElementById('refNo').value=genRef(ds);
     renderItems();
     updatePreview();
+    scaleBillPreview();
   }
   init();
 </script>
