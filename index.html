@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ISH Engineering - Bill Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #1a3c6e;
+    --gold: #f0a500;
+    --light: #f5f7fa;
+    --border: #dde3ed;
+    --text: #1a1a2e;
+    --muted: #6b7a99;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sora', sans-serif; background: #eef1f7; min-height: 100vh; padding: 30px 20px; }
+
+  /* ── CONTROL PANEL ── */
+  .control-panel {
+    max-width: 900px; margin: 0 auto 30px; background: white;
+    border-radius: 16px; padding: 28px 32px;
+    box-shadow: 0 4px 24px rgba(26,60,110,0.10); border: 1px solid var(--border);
+  }
+  .control-panel h2 {
+    font-size: 13px; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--navy); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .control-panel h2::before {
+    content: ''; width: 18px; height: 3px; background: var(--gold);
+    border-radius: 2px; display: inline-block;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group.half { grid-column: span 2; }
+  label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  input, textarea, select {
+    font-family: 'Sora', sans-serif; font-size: 13px; padding: 10px 14px;
+    border: 1.5px solid var(--border); border-radius: 8px; color: var(--text);
+    background: var(--light); transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  }
+  input:focus, textarea:focus {
+    border-color: var(--navy); box-shadow: 0 0 0 3px rgba(26,60,110,0.08); background: white;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-add { background: var(--light); color: var(--navy); border: 1.5px dashed var(--navy); width: 100%; margin-top: 4px; }
+  .btn-add:hover { background: rgba(26,60,110,0.07); }
+  .btn-remove { background: #fee2e2; color: #dc2626; border-radius: 6px; width: 28px; height: 28px; padding: 0; font-size: 16px; line-height: 1; border: none; cursor: pointer; flex-shrink: 0; }
+  .btn-print { background: var(--navy); color: white; padding: 13px 32px; font-size: 14px; border-radius: 10px; margin-top: 20px; display: flex; align-items: center; gap: 8px; border: none; }
+  .btn-print:hover { background: #14305a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,60,110,0.25); }
+  .btn-print:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--navy); margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+
+  /* ── ITEM CARDS ── */
+  .item-card { background: #f8fafd; border: 1.5px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; transition: border-color 0.2s; }
+  .item-card:focus-within { border-color: var(--navy); }
+  .item-card-header { display: grid; grid-template-columns: 1fr 70px 100px 100px 32px; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .item-card-header input { font-size: 12px; }
+  .item-col-labels { display: grid; grid-template-columns: 1fr 70px 100px 100px 32px; gap: 8px; margin-bottom: 6px; }
+  .item-col-labels span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .sub-items-section { margin-top: 6px; padding-top: 8px; border-top: 1px dashed var(--border); }
+  .sub-items-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .sub-items-label::before { content: '•'; color: var(--gold); font-size: 14px; }
+  .sub-item-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+  .sub-item-bullet { color: var(--gold); font-weight: 700; font-size: 14px; flex-shrink: 0; width: 14px; }
+  .sub-item-row input { flex: 1; font-size: 11px; padding: 6px 10px; background: white; }
+  .btn-add-sub { background: transparent; color: var(--navy); border: 1.5px dashed #aab4c8; border-radius: 6px; font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; padding: 5px 12px; margin-top: 2px; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px; }
+  .btn-add-sub:hover { background: rgba(26,60,110,0.06); border-color: var(--navy); }
+
+  /* ── PREVIOUS DUE PANEL ── */
+  .due-panel {
+    margin-top: 20px;
+    background: #fffbf0;
+    border: 1.5px solid #f0c040;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .due-panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 18px;
+    background: linear-gradient(90deg, #fff8e1, #fffbf0);
+    border-bottom: 1.5px solid #f0c04040;
+    cursor: pointer;
+    user-select: none;
+  }
+  .due-panel-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: #a06800;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .due-panel-title span.badge {
+    background: var(--gold); color: white; border-radius: 10px;
+    font-size: 10px; padding: 2px 8px; letter-spacing: 0;
+    text-transform: none; font-weight: 700;
+  }
+  .due-toggle-btn {
+    background: none; border: 1.5px solid #d4900a; color: #a06800;
+    border-radius: 7px; font-size: 11px; font-weight: 700;
+    padding: 5px 14px; cursor: pointer; font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+  }
+  .due-toggle-btn:hover, .due-toggle-btn.on { background: var(--gold); color: white; border-color: var(--gold); }
+
+  .due-body { display: none; padding: 16px 18px; }
+  .due-body.open { display: block; }
+
+  .due-col-labels {
+    display: grid; grid-template-columns: 1fr 130px 130px 32px;
+    gap: 8px; margin-bottom: 7px;
+  }
+  .due-col-labels span { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  .due-row-item {
+    display: grid; grid-template-columns: 1fr 130px 130px 32px;
+    gap: 8px; align-items: center; margin-bottom: 8px;
+  }
+  .due-row-item input { font-size: 12px; }
+  .btn-add-due {
+    background: transparent; color: #a06800;
+    border: 1.5px dashed #f0a500; border-radius: 6px;
+    font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 600;
+    cursor: pointer; padding: 6px 14px; margin-top: 4px;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .btn-add-due:hover { background: #fff3cc; }
+
+  /* ── PREVIEW A4 ── */
+  .preview-wrapper { max-width: 860px; margin: 0 auto; }
+  .preview-label { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; text-align: center; }
+
+  .a4-page {
+    width: 794px; min-height: 1123px; margin: 0 auto; background: white;
+    box-shadow: 0 8px 48px rgba(26,60,110,0.18); border-radius: 4px;
+    overflow: hidden; position: relative; font-family: 'Sora', sans-serif;
+  }
+  .bill-header { background: var(--navy); padding: 28px 40px 22px; color: white; position: relative; }
+  .bill-header::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: var(--gold); }
+  .company-name { font-size: 22px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  .company-sub { font-size: 11px; opacity: 0.75; margin-bottom: 2px; font-weight: 300; }
+  .bill-title-tag { position: absolute; top: 28px; right: 40px; background: var(--gold); color: var(--navy); font-weight: 700; font-size: 13px; letter-spacing: 3px; padding: 6px 18px; border-radius: 4px; }
+
+  .meta-row { display: flex; gap: 12px; padding: 18px 40px; background: #f8fafd; border-bottom: 1px solid var(--border); }
+  .meta-box { flex: 1; background: white; border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 16px; }
+  .meta-box-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 3px; }
+  .meta-box-value { font-size: 13px; font-weight: 600; color: var(--navy); font-family: 'IBM Plex Mono', monospace; }
+
+  .bill-body { padding: 24px 40px; }
+  .to-section { margin-bottom: 20px; padding: 16px 20px; background: #f8fafd; border-left: 3px solid var(--gold); border-radius: 0 8px 8px 0; }
+  .to-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .to-name { font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+  .to-address { font-size: 12px; color: #555; line-height: 1.5; }
+
+  .subject-row { margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+  .subject-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
+  .subject-text { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .bill-table { width: 100%; border-collapse: collapse; }
+  .bill-table thead tr { background: var(--navy); color: white; }
+  .bill-table thead th { padding: 10px 14px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; text-align: left; }
+  .bill-table thead th:last-child, .bill-table thead th:nth-child(3), .bill-table thead th:nth-child(4) { text-align: right; }
+  .bill-table tbody tr { border-bottom: 1px solid var(--border); }
+  .bill-table tbody tr:nth-child(even) { background: #f8fafd; }
+  .bill-table tbody td { padding: 12px 14px; font-size: 12px; vertical-align: top; color: var(--text); }
+  .bill-table tbody td:last-child, .bill-table tbody td:nth-child(3), .bill-table tbody td:nth-child(4) { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+
+  .desc-main { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+  .desc-points { list-style: none; padding: 0; margin: 0; }
+  .desc-points li { font-size: 11px; color: #555; padding: 1px 0; }
+  .desc-points li::before { content: '• '; color: var(--gold); font-weight: 700; }
+
+  .subtotal-row td { background: #e8edf5 !important; color: var(--navy) !important; font-weight: 700; font-size: 12px; border: none; font-family: 'IBM Plex Mono', monospace; padding: 10px 14px; text-align: right; white-space: nowrap; }
+  .due-trow td { background: #fff8e1 !important; color: #7a5200 !important; font-size: 12px; border-bottom: 1px dashed #f0c04060 !important; vertical-align: middle; }
+  .due-trow td:nth-child(2), .due-trow td:nth-child(3) { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  .due-trow td .due-meta { font-size: 11px; color: #a06800; }
+  .total-row td { background: var(--navy) !important; color: white !important; font-weight: 700; font-size: 13px; border: none; font-family: 'IBM Plex Mono', monospace; padding: 12px 14px; text-align: right; white-space: nowrap; }
+  .grand-total-row td { background: #0d2649 !important; color: white !important; font-weight: 700; font-size: 13px; border: none; font-family: 'IBM Plex Mono', monospace; padding: 13px 14px; text-align: right; white-space: nowrap; }
+
+  .amount-words { margin-top: 20px; padding: 14px 20px; background: #fffbf0; border: 1.5px solid #f0a50040; border-radius: 8px; }
+  .amount-words-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 3px; }
+  .amount-words-text { font-size: 14px; font-weight: 700; color: var(--navy); }
+
+  .sig-row { display: flex; justify-content: space-between; margin-top: 60px; }
+  .sig-box { text-align: center; width: 160px; }
+  .sig-line { border-top: 2px solid var(--navy); margin-bottom: 6px; }
+  .sig-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  .bill-footer { position: absolute; bottom: 0; left: 0; right: 0; background: var(--navy); color: rgba(255,255,255,0.7); text-align: center; padding: 10px; font-size: 10px; }
+
+  /* Loading overlay */
+  #pdfLoadingOverlay { display: none; position: fixed; inset: 0; background: rgba(26,60,110,0.75); z-index: 9999; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  #pdfLoadingOverlay.show { display: flex; }
+  .loading-spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.3); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: white; font-size: 14px; font-weight: 600; }
+
+
+  /* ── MOBILE / TABLET RESPONSIVE ── */
+  @media (max-width: 860px) {
+    .preview-wrapper { overflow-x: auto; }
+    .a4-page { transform-origin: top left; }
+  }
+
+  @media (max-width: 700px) {
+    body { padding: 12px 10px; }
+
+    .control-panel { padding: 18px 14px; border-radius: 12px; }
+    .control-panel h2 { font-size: 11px; margin-bottom: 14px; }
+
+    /* Form grid: 1 column on mobile */
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+    .form-group.half { grid-column: span 1; }
+    .form-group.full { grid-column: span 1; }
+
+    input, textarea, select { font-size: 14px; padding: 11px 12px; }
+
+    /* Item card: stack columns */
+    .item-col-labels { display: none; }
+    .item-card { padding: 12px; }
+    .item-card-header {
+      grid-template-columns: 1fr 32px;
+      grid-template-rows: auto auto auto;
+      gap: 6px;
+    }
+    .item-card-header input:nth-child(1) { grid-column: 1 / 2; }
+    .item-card-header input:nth-child(2),
+    .item-card-header input:nth-child(3),
+    .item-card-header input:nth-child(4) { grid-column: 1 / 2; }
+    .item-card-header .btn-remove { grid-column: 2; grid-row: 1; }
+
+    /* Due panel */
+    .due-col-labels { display: none; }
+    .due-row-item {
+      grid-template-columns: 1fr 32px;
+      grid-template-rows: auto auto auto;
+      gap: 6px;
+    }
+    .due-row-item input { grid-column: 1 / 2; }
+    .due-row-item .btn-remove { grid-column: 2; grid-row: 1; }
+
+    /* Buttons */
+    .btn-print { padding: 12px 18px; font-size: 13px; }
+
+    /* Preview: scale down A4 to fit screen */
+    .preview-wrapper { overflow-x: hidden; }
+    .a4-page {
+      width: 100% !important;
+      min-height: unset !important;
+      border-radius: 8px;
+      transform-origin: top left;
+    }
+
+    #billPreview { width: 794px; }
+    .preview-wrapper { overflow: hidden; }
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .control-panel, .preview-label { display: none !important; }
+    .preview-wrapper { max-width: none; }
+    .a4-page { box-shadow: none; width: 210mm; min-height: 297mm; border-radius: 0; margin: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="pdfLoadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">PDF তৈরি হচ্ছে...</div>
+</div>
+
+<!-- ── CONTROL PANEL ── -->
+<div class="control-panel">
+  <h2>Bill Generator — ISH Engineering</h2>
+
+  <div class="form-grid">
+    <div class="form-group">
+      <label>Date</label>
+      <input type="date" id="billDate">
+    </div>
+    <div class="form-group">
+      <label>Bill No. (Serial)</label>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input type="text" id="billNo" readonly style="background:#eef1f7;cursor:not-allowed;flex:1;font-family:'IBM Plex Mono',monospace;font-size:12px;">
+        <input type="number" id="billSerial" value="1" min="1" max="99" style="width:60px;text-align:center;font-weight:700;" oninput="onSerialChange()">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Ref No.</label>
+      <input type="text" id="refNo" readonly style="background:#eef1f7;cursor:not-allowed;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+    </div>
+
+    <div class="form-group half">
+      <label>Client Name</label>
+      <input type="text" id="clientName" value="Alien Weaving Factory Limited">
+    </div>
+    <div class="form-group">
+      <label>Client Phone</label>
+      <input type="text" id="clientPhone" value="+8801755-884646">
+    </div>
+
+    <div class="form-group full">
+      <label>Client Address</label>
+      <input type="text" id="clientAddress" value="27, Kathaldia, South Auchpa Nishatnagor, Tongi, Gazipur, Bangladesh">
+    </div>
+    <div class="form-group full">
+      <label>Client Email</label>
+      <input type="text" id="clientEmail" value="alien@alienbd.net">
+    </div>
+    <div class="form-group full">
+      <label>Subject</label>
+      <input type="text" id="subject" value="Service Charge Bill for Warp Winding Machine Repair">
+    </div>
+  </div>
+
+  <div class="section-label">Service Items</div>
+  <div class="item-col-labels">
+    <span>Description</span><span>Qty</span>
+    <span style="text-align:right">Unit Price</span>
+    <span style="text-align:right">Total</span><span></span>
+  </div>
+  <div id="itemsContainer"></div>
+  <button class="btn btn-add" onclick="addItem()">+ Add Item</button>
+
+  <!-- ── PREVIOUS DUE ── -->
+  <div class="due-panel">
+    <div class="due-panel-header" onclick="toggleDue()">
+      <div class="due-panel-title">
+        ⏳ Previous Due
+        <span class="badge" id="dueBadge" style="display:none">0 entry</span>
+      </div>
+      <button class="due-toggle-btn" id="dueToggleBtn" onclick="event.stopPropagation();toggleDue()">+ Enable</button>
+    </div>
+    <div class="due-body" id="dueBody">
+      <div class="due-col-labels">
+        <span>Previous Bill No.</span>
+        <span>Bill Date</span>
+        <span style="text-align:right">Due Amount (Tk.)</span>
+        <span></span>
+      </div>
+      <div id="dueRowsContainer"></div>
+      <button class="btn-add-due" onclick="addDueRow()">+ Add Entry</button>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:20px;">
+      <button class="btn btn-print" id="btnSavePDF" onclick="savePDF()">📄 Save as PDF</button>
+      <button class="btn btn-print" style="background:#2d6a4f;" onclick="window.print()">🖨️ Print</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:20px;">A4 size • Background সহ PDF Save হবে</div>
+  </div>
+</div>
+
+<!-- ── PREVIEW ── -->
+<div class="preview-wrapper">
+  <div class="preview-label">▼ Bill Preview (A4)</div>
+  <div class="a4-page" id="billPreview">
+
+    <div class="bill-header">
+      <div class="bill-title-tag">BILL</div>
+      <div class="company-name">ISH Engineering and Automation Technology</div>
+      <div class="company-sub">H#734, Kolmesshor Road, National University, Board Bazar, Gazipur-1704</div>
+      <div class="company-sub">&#128222; 01886667466 &nbsp;|&nbsp; &#9993; ish.biz.bd@gmail.com &nbsp;|&nbsp; <span style="background:var(--gold);color:var(--navy);padding:2px 8px;border-radius:3px;font-weight:700;font-size:10px;">&#9993; ish.engr.bd@gmail.com</span></div>
+    </div>
+
+    <div class="meta-row">
+      <div class="meta-box">
+        <div class="meta-box-label">Date</div>
+        <div class="meta-box-value" id="previewDate">&#8212;</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-box-label">Bill No.</div>
+        <div class="meta-box-value" id="previewBillNo">&#8212;</div>
+      </div>
+      <div class="meta-box">
+        <div class="meta-box-label">Ref</div>
+        <div class="meta-box-value" id="previewRef">&#8212;</div>
+      </div>
+    </div>
+
+    <div class="bill-body">
+      <div class="to-section">
+        <div class="to-label">Bill To</div>
+        <div class="to-name" id="previewClientName">&#8212;</div>
+        <div class="to-address" id="previewClientAddress">&#8212;</div>
+        <div class="to-address" id="previewClientContact"></div>
+      </div>
+
+      <div class="subject-row">
+        <span class="subject-label">Subject:</span>
+        <span class="subject-text" id="previewSubject">&#8212;</span>
+      </div>
+
+      <table class="bill-table">
+        <thead>
+          <tr>
+            <th style="width:40px">S.L</th>
+            <th>Description</th>
+            <th style="width:60px">Qty</th>
+            <th style="width:110px">Unit Price (Tk.)</th>
+            <th style="width:110px">Total Price (Tk.)</th>
+          </tr>
+        </thead>
+        <tbody id="previewItems"></tbody>
+        <tfoot id="previewTfoot">
+          <!-- filled by JS -->
+        </tfoot>
+      </table>
+
+      <div class="amount-words">
+        <div class="amount-words-label">Amount in Words</div>
+        <div class="amount-words-text" id="previewWords">&#8212;</div>
+      </div>
+
+      <div class="sig-row">
+        <div class="sig-box">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAAjCAYAAAB2BvMkAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAvFSURBVHhe7ZwHkBRFF8eHIBYFWORQkg+KoIAEjxwkSAZBBIlHEhGQnJOSQckUuUAKUFIRJAfJSREQVKLkHJUcFOxvf49uv7m9nQ3HnXLc/qq22O6Z2Z3uef3e/75eLo5yYQUJEsXE1f8GCRKlRLnHWrp0qbVo0SLrzz//tGrUqGE1adJEHwkSm4gSj7V9+3arYsWKVpw4cawOHTpY9+/fty5evGiFhYVZmzZt0mfFHu7evWtNnjzZCg0NlTmxv9q3b6/PesnBY0WWmzdvqgIFCuDxVLly5dSxY8f0kWeUKVNGuSZSt15+Ll26pBo2bKhcBiRzUrduXbV371516tQp5Vpoqnfv3tJ/4sQJfYV3XF5fuRapbsUsIm1YrhUpk/TGG2+oo0eP6t7wVKtWTQ0fPly3Xm5YQMxHnjx51MKFC3VveB4/fqySJUumtm7dqnucwajeeust+UyMM6YRKcOqXLmyDHjo0KG6JyL37t1TSZIkURcuXNA9Lyfjx4+XuciRI4e6c+eO7vXMzz//rFKkSKH++OMP3ePMm2++KZ9bsGBB5QqtujfmEJBhPXnyRFWoUEEGvGzZMt3rmcWLF6vXX39dt7zz119/qatXr+pWzAAjItQzF4zVHwYNHqRCC4fqljMDBw6Uzy1evLjuiXkEZFiFChWSAbvEuu5xhpU2YsQI3XLm1q1bKnny5PK5x48f174vNteuXZP7TZMmTUDeJG3atGrSpEm65RnCHp9dpEgR9ffff+vemIffhlWzZk0Z8Ndff617nPnxxx9VypQpJRz6ApeP6Ef0HjhwQPf6pnHjxmrRokW69e/x008/yTxwv4Fw5MgRuQ6jdOLhw4ciHwiXMR2/DOuLL76QSfnss890j3dKlSql+vTpo1vOfPnll2ru3LkSCt9++23d65tdu3ZJGPq3OXz4sIofP76qU6eO7vGfBg0aMdcnU6WQAAAAAElFTkSuQmCC" style="max-width:120px;height:auto;">
+          <div class="sig-line"></div>
+          <div class="sig-label">Authorized Signature</div>
+        </div>
+        <div class="sig-box">
+          <div style="height:42px;"></div>
+          <div class="sig-line"></div>
+          <div class="sig-label">Received By</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bill-footer">
+      ISH Engineering and Automation Technology &nbsp;|&nbsp; ish.biz.bd@gmail.com &nbsp;|&nbsp; ish.engr.bd@gmail.com &nbsp;|&nbsp; 01886667466
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─────────────── Helpers ─────────────── */
+  function pad(n){ return String(n).padStart(2,'0'); }
+
+  function formatDateDisplay(dateStr){
+    if(!dateStr) return '—';
+    const [y,m,d] = dateStr.split('-');
+    return d+'-'+m+'-'+y;
+  }
+
+  function makeAbbr(name){
+    if(!name) return 'CLIENT';
+    return name.trim().split(/\s+/)
+      .filter(w => !['and','&','of','the','a','an'].includes(w.toLowerCase()))
+      .map(w => w[0].toUpperCase()).join('');
+  }
+
+  function genBillNo(serial){ return 'ISH674-'+String(serial).padStart(2,'0'); }
+
+  function genRef(dateStr){
+    if(!dateStr) return '';
+    const [y,m] = dateStr.split('-');
+    const abbr = makeAbbr(document.getElementById('clientName').value) || 'CLIENT';
+    return 'ISH/REP/'+abbr+'/'+m+y.slice(2);
+  }
+
+  function numberToWords(num){
+    const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+    const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+    if(num===0) return 'Zero';
+    function cv(n){
+      if(n<20) return ones[n];
+      if(n<100) return tens[Math.floor(n/10)]+(n%10?' '+ones[n%10]:'');
+      if(n<1000) return ones[Math.floor(n/100)]+' Hundred'+(n%100?' '+cv(n%100):'');
+      if(n<100000) return cv(Math.floor(n/1000))+' Thousand'+(n%1000?' '+cv(n%1000):'');
+      if(n<10000000) return cv(Math.floor(n/100000))+' Lakh'+(n%100000?' '+cv(n%100000):'');
+      return cv(Math.floor(n/10000000))+' Crore'+(n%10000000?' '+cv(n%10000000):'');
+    }
+    return 'Tk. '+cv(Math.floor(num))+' Taka Only.';
+  }
+
+  function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  /* ─────────────── Items ─────────────── */
+  let items = [
+    { desc: 'Service Charge for Warp Winding Machine Repair', points: ['Troubleshooting', 'Repair'], qty: 1, unit: 2000 }
+  ];
+
+  function addItem(){ items.push({desc:'',points:[],qty:1,unit:0}); renderItems(); updatePreview(); }
+  function removeItem(i){ items.splice(i,1); renderItems(); updatePreview(); }
+
+  function addSubItem(i){
+    items[i].points.push('');
+    renderItems(); updatePreview();
+    setTimeout(()=>{
+      const card=document.querySelectorAll('.item-card')[i];
+      if(card){ const si=card.querySelectorAll('.sub-item-row input'); if(si.length) si[si.length-1].focus(); }
+    },30);
+  }
+  function removeSubItem(ii,si){ items[ii].points.splice(si,1); renderItems(); updatePreview(); }
+
+  function refreshTotal(i){
+    const el=document.getElementById('ti_'+i);
+    if(el) el.value=(items[i].qty*items[i].unit).toLocaleString('en-IN',{minimumFractionDigits:2});
+  }
+
+  function renderItems(){
+    const c=document.getElementById('itemsContainer'); c.innerHTML='';
+    items.forEach((item,i)=>{
+      const lt=item.qty*item.unit;
+      const div=document.createElement('div'); div.className='item-card';
+      let subs='';
+      item.points.forEach((pt,si)=>{
+        subs+=`<div class="sub-item-row">
+          <span class="sub-item-bullet">•</span>
+          <input type="text" value="${escH(pt)}" placeholder="Sub-item লিখুন..."
+            oninput="items[${i}].points[${si}]=this.value;updatePreview()">
+          <button class="btn-remove" onclick="removeSubItem(${i},${si})">×</button>
+        </div>`;
+      });
+      div.innerHTML=`
+        <div class="item-card-header">
+          <input type="text" value="${escH(item.desc)}" placeholder="Item description..."
+            oninput="items[${i}].desc=this.value;updatePreview()">
+          <input type="number" value="${item.qty}" min="1" style="text-align:center"
+            oninput="items[${i}].qty=+this.value;updatePreview();refreshTotal(${i})">
+          <input type="number" value="${item.unit}" min="0" style="text-align:right"
+            oninput="items[${i}].unit=+this.value;updatePreview();refreshTotal(${i})">
+          <input type="text" id="ti_${i}" value="${lt.toLocaleString('en-IN',{minimumFractionDigits:2})}"
+            readonly style="text-align:right;background:#eef1f7;cursor:not-allowed;font-family:'IBM Plex Mono',monospace;font-size:11px">
+          <button class="btn-remove" onclick="removeItem(${i})">×</button>
+        </div>
+        <div class="sub-items-section">
+          <div class="sub-items-label">Bullet Points / Sub-items</div>
+          <div>${subs}</div>
+          <button class="btn-add-sub" onclick="addSubItem(${i})">+ Add bullet</button>
+        </div>`;
+      c.appendChild(div);
+    });
+  }
+
+  /* ─────────────── Previous Due ─────────────── */
+  let dueItems = [];
+  let dueEnabled = false;
+
+  function toggleDue(){
+    dueEnabled = !dueEnabled;
+    const btn = document.getElementById('dueToggleBtn');
+    const body = document.getElementById('dueBody');
+    if(dueEnabled){
+      btn.textContent = '✓ Enabled';
+      btn.classList.add('on');
+      body.classList.add('open');
+      if(dueItems.length === 0) addDueRow();
+    } else {
+      btn.textContent = '+ Enable';
+      btn.classList.remove('on');
+      body.classList.remove('open');
+      dueItems = [];
+      renderDueRows();
+    }
+    updatePreview();
+  }
+
+  function addDueRow(){
+    dueItems.push({ billNo: '', date: '', amount: 0 });
+    renderDueRows();
+    updatePreview();
+  }
+
+  function removeDueRow(i){
+    dueItems.splice(i,1);
+    renderDueRows();
+    updatePreview();
+    if(dueEnabled && dueItems.length === 0) toggleDue();
+  }
+
+  function renderDueRows(){
+    const c = document.getElementById('dueRowsContainer');
+    c.innerHTML = '';
+    dueItems.forEach((d,i) => {
+      const row = document.createElement('div');
+      row.className = 'due-row-item';
+      row.innerHTML = `
+        <input type="text" value="${escH(d.billNo)}" placeholder="যেমন: ISH674-03"
+          oninput="dueItems[${i}].billNo=this.value;updateDueBadge();updatePreview()">
+        <input type="date" value="${escH(d.date)}"
+          oninput="dueItems[${i}].date=this.value;updatePreview()">
+        <input type="number" value="${d.amount||''}" min="0" placeholder="0.00"
+          style="text-align:right;font-family:'IBM Plex Mono',monospace;"
+          oninput="dueItems[${i}].amount=parseFloat(this.value)||0;updatePreview()">
+        <button class="btn-remove" onclick="removeDueRow(${i})">×</button>`;
+      c.appendChild(row);
+    });
+    updateDueBadge();
+  }
+
+  function updateDueBadge(){
+    const badge = document.getElementById('dueBadge');
+    const count = dueItems.filter(d => d.amount > 0 || d.billNo.trim()).length;
+    if(dueEnabled && count > 0){
+      badge.style.display = '';
+      badge.textContent = count + (count===1?' entry':' entries');
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  /* ─────────────── Preview ─────────────── */
+  function updatePreview(){
+    const dateStr = document.getElementById('billDate').value;
+    document.getElementById('previewDate').textContent   = formatDateDisplay(dateStr) || '—';
+    document.getElementById('previewBillNo').textContent = document.getElementById('billNo').value || '—';
+    document.getElementById('previewRef').textContent    = document.getElementById('refNo').value || '—';
+    document.getElementById('previewClientName').textContent    = document.getElementById('clientName').value || '—';
+    document.getElementById('previewClientAddress').textContent = document.getElementById('clientAddress').value || '';
+    const phone = document.getElementById('clientPhone').value;
+    const email = document.getElementById('clientEmail').value;
+    document.getElementById('previewClientContact').textContent =
+      [phone&&'📞 '+phone, email&&'✉ '+email].filter(Boolean).join('   |   ');
+    document.getElementById('previewSubject').textContent = document.getElementById('subject').value || '—';
+
+    // Items
+    const tbody = document.getElementById('previewItems');
+    tbody.innerHTML = '';
+    let subTotal = 0;
+    items.forEach((item,i)=>{
+      const lt = item.qty * item.unit;
+      subTotal += lt;
+      const tr = document.createElement('tr');
+      const pts = item.points.filter(p=>p.trim()!=='');
+      tr.innerHTML=`
+        <td style="text-align:center;font-weight:600">${i+1}.</td>
+        <td>
+          <div class="desc-main">${escH(item.desc)||'—'}</div>
+          ${pts.length?'<ul class="desc-points">'+pts.map(p=>'<li>'+escH(p)+'</li>').join('')+'</ul>':''}
+        </td>
+        <td>${item.qty} No</td>
+        <td>${item.unit.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>
+        <td>${lt.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    // Tfoot
+    const tfoot = document.getElementById('previewTfoot');
+    tfoot.innerHTML = '';
+
+    const validDues = dueEnabled ? dueItems.filter(d => d.amount > 0 || d.billNo.trim() || d.date) : [];
+    const dueTotal  = validDues.reduce((s,d)=>s+(d.amount||0), 0);
+    const grandTotal = subTotal + dueTotal;
+
+    if(validDues.length > 0){
+      // Sub total row
+      const str = document.createElement('tr');
+      str.className = 'subtotal-row';
+      str.innerHTML = `<td colspan="4" style="text-align:right;padding:10px 14px;letter-spacing:0.5px;">Sub Total :</td><td style="text-align:right;padding:10px 14px;">${subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
+      tfoot.appendChild(str);
+
+      // Due rows
+      validDues.forEach(d=>{
+        const dr = document.createElement('tr');
+        dr.className = 'due-trow';
+        const meta = [d.billNo?'Bill: <b>'+escH(d.billNo)+'</b>':'', d.date?'Date: '+formatDateDisplay(d.date):''].filter(Boolean).join(' &nbsp;|&nbsp; ');
+        dr.innerHTML=`
+          <td colspan="3">
+            <span style="background:#f0a50022;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;color:#7a5200;">⏳ Previous Due</span>
+            ${meta?'<span class="due-meta" style="margin-left:10px">'+meta+'</span>':''}
+          </td>
+          <td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;color:#7a5200;padding:9px 14px;">+</td>
+          <td style="text-align:right;font-family:\'IBM Plex Mono\',monospace;color:#7a5200;padding:9px 14px;">${(d.amount||0).toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
+        tfoot.appendChild(dr);
+      });
+
+      // Grand Total row
+      const gtr = document.createElement('tr');
+      gtr.className = 'grand-total-row';
+      gtr.innerHTML = `<td colspan="4" style="text-align:right;padding:13px 14px;letter-spacing:1px;">GRAND TOTAL :</td><td style="text-align:right;padding:13px 14px;">${grandTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
+      tfoot.appendChild(gtr);
+    } else {
+      // Plain total row
+      const tr = document.createElement('tr');
+      tr.className = 'total-row';
+      tr.innerHTML = `<td colspan="4" style="text-align:right;padding:12px 14px;letter-spacing:0.5px;">Total :</td><td style="text-align:right;padding:12px 14px;">${subTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;
+      tfoot.appendChild(tr);
+    }
+
+    const finalAmt = validDues.length > 0 ? grandTotal : subTotal;
+    document.getElementById('previewWords').textContent = finalAmt > 0 ? numberToWords(finalAmt) : '—';
+  }
+
+  /* ─────────────── Controls ─────────────── */
+  function onSerialChange(){
+    const s = parseInt(document.getElementById('billSerial').value)||1;
+    document.getElementById('billNo').value = genBillNo(s);
+    updatePreview();
+  }
+
+  document.getElementById('billDate').addEventListener('input', function(){
+    const s = parseInt(document.getElementById('billSerial').value)||1;
+    document.getElementById('billNo').value = genBillNo(s);
+    document.getElementById('refNo').value  = genRef(this.value);
+    updatePreview();
+  });
+
+  ['clientName','clientAddress','clientPhone','clientEmail','subject'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', function(){
+      if(id==='clientName'){
+        const d=document.getElementById('billDate').value;
+        document.getElementById('refNo').value = genRef(d);
+      }
+      updatePreview();
+    });
+  });
+
+  /* ─────────────── PDF ─────────────── */
+  async function savePDF(){
+    const btn = document.getElementById('btnSavePDF');
+    const overlay = document.getElementById('pdfLoadingOverlay');
+    btn.disabled = true;
+    overlay.classList.add('show');
+    try {
+      const billEl = document.getElementById('billPreview');
+      const origMin = billEl.style.minHeight;
+      billEl.style.minHeight = '1123px';
+      await new Promise(r=>setTimeout(r,350));
+
+      const canvas = await html2canvas(billEl,{
+        scale:2, useCORS:true, allowTaint:true,
+        backgroundColor:'#ffffff', logging:false,
+        width:billEl.offsetWidth, height:billEl.offsetHeight,
+        windowWidth:billEl.scrollWidth, windowHeight:billEl.scrollHeight
+      });
+      billEl.style.minHeight = origMin;
+
+      const {jsPDF} = window.jspdf;
+      const A4W=210, A4H=297;
+      const imgW=A4W, imgH=(canvas.height/canvas.width)*A4W;
+      const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
+      const imgData=canvas.toDataURL('image/jpeg',0.95);
+
+      if(imgH<=A4H){
+        pdf.addImage(imgData,'JPEG',0,(A4H-imgH)/2,imgW,imgH);
+      } else {
+        const sc=A4H/imgH;
+        const sw=imgW*sc;
+        pdf.addImage(imgData,'JPEG',(A4W-sw)/2,0,sw,A4H);
+      }
+
+      const billNo = document.getElementById('billNo').value||'bill';
+      const clientSlug = (document.getElementById('clientName').value||'client')
+        .replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').slice(0,20);
+      pdf.save(billNo+'_'+clientSlug+'.pdf');
+    } catch(e){
+      console.error(e);
+      alert('PDF তৈরিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      btn.disabled=false;
+      overlay.classList.remove('show');
+    }
+  }
+
+
+  /* ── Bill Preview Scale (Mobile) ── */
+  function scaleBillPreview() {
+    const preview = document.getElementById('billPreview');
+    const wrapper = document.querySelector('.preview-wrapper');
+    if (!preview || !wrapper) return;
+    const wrapperW = wrapper.clientWidth;
+    const billW = 794;
+    if (wrapperW < billW) {
+      const scale = wrapperW / billW;
+      preview.style.transform = 'scale(' + scale + ')';
+      preview.style.transformOrigin = 'top left';
+      preview.style.marginBottom = ((preview.scrollHeight * scale) - preview.scrollHeight) + 'px';
+    } else {
+      preview.style.transform = '';
+      preview.style.marginBottom = '';
+    }
+  }
+
+  window.addEventListener('resize', scaleBillPreview);
+  window.addEventListener('load', scaleBillPreview);
+
+  /* ─────────────── Init ─────────────── */
+  function init(){
+    scaleBillPreview();
+    const today=new Date();
+    const ds=today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
+    document.getElementById('billDate').value=ds;
+    document.getElementById('billNo').value=genBillNo(1);
+    document.getElementById('refNo').value=genRef(ds);
+    renderItems();
+    updatePreview();
+  }
+  init();
+</script>
+</body>
+</html>
